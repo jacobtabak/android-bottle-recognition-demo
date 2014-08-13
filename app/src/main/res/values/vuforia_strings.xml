@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="UPDATE_ERROR_AUTHORIZATION_FAILED_TITLE">Authorization Error</string>
+    <string name="UPDATE_ERROR_PROJECT_SUSPENDED_TITLE">Authorization Error</string>
+    <string name="UPDATE_ERROR_NO_NETWORK_CONNECTION_TITLE">Network Unavailable</string>
+    <string name="UPDATE_ERROR_SERVICE_NOT_AVAILABLE_TITLE">Service Unavailable</string>
+    <string name="UPDATE_ERROR_UPDATE_SDK_TITLE">Unsupported Version</string>
+    <string name="UPDATE_ERROR_TIMESTAMP_OUT_OF_RANGE_TITLE">Clock Sync Error</string>
+    <string name="UPDATE_ERROR_REQUEST_TIMEOUT_TITLE">Request Timeout</string>
+    <string name="UPDATE_ERROR_BAD_FRAME_QUALITY_TITLE">Poor Camera Image</string>
+    <string name="UPDATE_ERROR_UNKNOWN_TITLE">Service Unavailable</string>
+    <string name="UPDATE_ERROR_AUTHORIZATION_FAILED_DESC">The cloud recognition service access keys are incorrect or have expired.</string>
+    <string name="UPDATE_ERROR_PROJECT_SUSPENDED_DESC">The cloud recognition service has been suspended.</string>
+    <string name="UPDATE_ERROR_NO_NETWORK_CONNECTION_DESC">Please check your internet connection and try again.</string>
+    <string name="UPDATE_ERROR_SERVICE_NOT_AVAILABLE_DESC">The service is unavailable, please try again later.</string>
+    <string name="UPDATE_ERROR_UPDATE_SDK_DESC">The application is using an unsupported version of Vuforia.</string>
+    <string name="UPDATE_ERROR_TIMESTAMP_OUT_OF_RANGE_DESC">Please update the date and time and try again.</string>
+    <string name="UPDATE_ERROR_REQUEST_TIMEOUT_DESC">The network request has timed out, please check your internet connection and try again.</string>
+    <string name="UPDATE_ERROR_BAD_FRAME_QUALITY_DESC">The camera does not have enough detail, please try again later.</string>
+    <string name="UPDATE_ERROR_UNKNOWN_DESC">The service is unavaiable, please try again later.</string>
+</resources>
