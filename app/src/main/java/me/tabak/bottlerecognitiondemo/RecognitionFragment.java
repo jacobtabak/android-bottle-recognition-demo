@@ -31,17 +31,15 @@ import com.qualcomm.vuforia.template.SampleApplicationControl;
 import com.qualcomm.vuforia.template.SampleApplicationException;
 import com.qualcomm.vuforia.template.SampleApplicationGLView;
 import com.qualcomm.vuforia.template.SampleApplicationSession;
-import com.qualcomm.vuforia.template.Texture;
 import com.squareup.picasso.Callback;
 import com.squareup.picasso.Picasso;
-
-import java.util.Vector;
 
 import me.tabak.bottlerecognitiondemo.model.Metadata;
 import me.tabak.bottlerecognitiondemo.util.RecognitionRenderer;
 import me.tabak.bottlerecognitiondemo.util.VuforiaHelper;
 
 public class RecognitionFragment extends Fragment implements SampleApplicationControl {
+    private static final String CAMERA_HIDDEN = "camera hidden";
     SampleApplicationSession mVuforiaAppSession;
 
     // Our OpenGL view:
@@ -50,16 +48,7 @@ public class RecognitionFragment extends Fragment implements SampleApplicationCo
     // Our renderer:
     private GLSurfaceView.Renderer mRenderer;
 
-    private boolean mFlash = false;
-    private boolean mContAutofocus = false;
-    private boolean mExtendedTracking = false;
     boolean mFinderStarted = false;
-    boolean mStopFinderIfStarted = false;
-
-    private View mFlashOptionView;
-
-    // The textures we will use for rendering:
-    private Vector<Texture> mTextures;
 
     private static final String kAccessKey = "dba4a868311fb6d786017d2d31d359be4de62565";
     private static final String kSecretKey = "d9d032e20319f202307d02d9dff0ad1028e6a717";
@@ -73,24 +62,32 @@ public class RecognitionFragment extends Fragment implements SampleApplicationCo
     private AlertDialog mErrorDialog;
     private VuforiaHelper mVuforiaHelper = new VuforiaHelper();
 
-    private double mLastErrorTime;
-
     boolean mIsDroidDevice = false;
 
     private View mProgressBar;
     private ViewGroup mContainer;
-    private MainActivity mMainActivity;
+    private RecognitionActivity mRecognitionActivity;
     private MenuItem mCameraMenuItem;
     private ImageView mImageView;
+    private boolean mCameraHidden;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        Log.d(RecognitionFragment.class.getName(), "onCreate");
         super.onCreate(savedInstanceState);
-        mMainActivity = (MainActivity) getActivity();
+        mRecognitionActivity = (RecognitionActivity) getActivity();
         mIsDroidDevice = Build.MODEL.toLowerCase().startsWith("droid");
         mVuforiaAppSession = new SampleApplicationSession(this);
         mVuforiaAppSession.initAR(getActivity(), ActivityInfo.SCREEN_ORIENTATION_PORTRAIT);
         setHasOptionsMenu(true);
+    }
+
+    @Override
+    public void onActivityCreated(Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        if (savedInstanceState != null) {
+            mCameraHidden = savedInstanceState.getBoolean(CAMERA_HIDDEN);
+        }
     }
 
     @Override
@@ -102,7 +99,7 @@ public class RecognitionFragment extends Fragment implements SampleApplicationCo
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         mProgressBar = view.findViewById(R.id.progressbar);
-        mContainer = (ViewGroup) view.findViewById(R.id.recognition_container);
+        mContainer = (ViewGroup) view.findViewById(R.id.container);
         mImageView = (ImageView) view.findViewById(R.id.wine_logo_imageview);
     }
 
@@ -115,12 +112,13 @@ public class RecognitionFragment extends Fragment implements SampleApplicationCo
             public boolean onMenuItemClick(MenuItem item) {
                 try {
                     mVuforiaAppSession.resumeAR();
-                    mImageView.animate().alpha(0).setDuration(500).start();
-                    getActivity().invalidateOptionsMenu();
-                    mMainActivity.onReset();
                 } catch (SampleApplicationException e) {
                     Log.e(RecognitionFragment.class.getName(), null, e);
                 }
+                mImageView.animate().alpha(0).setDuration(500).start();
+                mCameraHidden = false;
+                getActivity().invalidateOptionsMenu();
+                mRecognitionActivity.onReset();
                 return true;
             }
         });
@@ -128,8 +126,8 @@ public class RecognitionFragment extends Fragment implements SampleApplicationCo
 
     @Override
     public void onPrepareOptionsMenu(Menu menu) {
+        mCameraMenuItem.setVisible(mCameraHidden);
         super.onPrepareOptionsMenu(menu);
-        mCameraMenuItem.setVisible(!mFinderStarted);
     }
 
     @Override
@@ -153,7 +151,6 @@ public class RecognitionFragment extends Fragment implements SampleApplicationCo
         if (mGlView != null)
         {
             mGlView.setVisibility(View.VISIBLE);
-            mImageView.animate().alpha(0).setDuration(0).start();
             mGlView.onResume();
         }
     }
@@ -169,32 +166,36 @@ public class RecognitionFragment extends Fragment implements SampleApplicationCo
     @Override
     public void onPause() {
         super.onPause();
-
-        //TODO: turn off flash?
-
-        try
-        {
+        try {
             mVuforiaAppSession.pauseAR();
         } catch (SampleApplicationException e) {
             Log.e(RecognitionFragment.class.getName(), null, e);
         }
+        CameraDevice.getInstance().deinit();
 
         // Pauses the OpenGLView
-        if (mGlView != null)
-        {
+        if (mGlView != null) {
             mGlView.setVisibility(View.INVISIBLE);
             mGlView.onPause();
         }
     }
 
     @Override
+    public void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean(CAMERA_HIDDEN, mCameraHidden);
+    }
+
+    @Override
     public void onDestroy() {
         super.onDestroy();
+        Log.d(RecognitionFragment.class.getName(), "onDestroy");
         try {
             mVuforiaAppSession.stopAR();
         } catch (SampleApplicationException e) {
             Log.e(RecognitionFragment.class.getName(), null, e);
         }
+        Vuforia.deinit();
         System.gc();
     }
 
@@ -213,12 +214,13 @@ public class RecognitionFragment extends Fragment implements SampleApplicationCo
         // Setups the Renderer of the GLView
         mRenderer = new RecognitionRenderer(mVuforiaAppSession, this);
         mGlView.setRenderer(mRenderer);
+        Log.d(RecognitionFragment.class.getName(), "AR Initialized");
     }
 
     // Shows error messages as System dialogs
     public void showErrorMessage(int errorCode, double errorTime, boolean finishActivityOnError)
     {
-        if (errorTime < (mLastErrorTime + 5.0) || errorCode == mLastErrorCode)
+        if (errorTime < (5.0) || errorCode == mLastErrorCode)
             return;
 
         mLastErrorCode = errorCode;
@@ -274,27 +276,6 @@ public class RecognitionFragment extends Fragment implements SampleApplicationCo
             targetFinder.clearTrackables();
             targetFinder.startRecognition();
         }
-        getActivity().invalidateOptionsMenu();
-    }
-
-
-    public void stopFinderIfStarted()
-    {
-        if(mFinderStarted)
-        {
-            mFinderStarted = false;
-
-            // Get the image tracker:
-            TrackerManager trackerManager = TrackerManager.getInstance();
-            ImageTracker imageTracker = (ImageTracker) trackerManager
-                    .getTracker(ImageTracker.getClassType());
-
-            // Initialize target finder:
-            TargetFinder targetFinder = imageTracker.getTargetFinder();
-
-            targetFinder.stop();
-        }
-        getActivity().invalidateOptionsMenu();
     }
 
 
@@ -352,7 +333,6 @@ public class RecognitionFragment extends Fragment implements SampleApplicationCo
     @Override
     public void onInitARDone(SampleApplicationException exception)
     {
-
         if (exception == null)
         {
             initApplicationAR();
@@ -364,7 +344,6 @@ public class RecognitionFragment extends Fragment implements SampleApplicationCo
             mContainer.addView(mGlView, new ViewGroup.LayoutParams(
                     ViewGroup.LayoutParams.MATCH_PARENT,
                     ViewGroup.LayoutParams.MATCH_PARENT));
-            mImageView.bringToFront();
 
             // Start the camera:
             try
@@ -373,16 +352,6 @@ public class RecognitionFragment extends Fragment implements SampleApplicationCo
                 startFinderIfStopped();
             } catch (SampleApplicationException e) {
                 Log.e(RecognitionFragment.class.getName(), e.getString());
-            }
-
-            boolean result = CameraDevice.getInstance().setFocusMode(
-                    CameraDevice.FOCUS_MODE.FOCUS_MODE_CONTINUOUSAUTO);
-
-            if (result) {
-                mContAutofocus = true;
-            }
-            else {
-                Log.e(RecognitionFragment.class.getName(), "Unable to enable continuous autofocus");
             }
 
             // Hides the Loading Dialog
@@ -394,7 +363,7 @@ public class RecognitionFragment extends Fragment implements SampleApplicationCo
             Log.e(RecognitionFragment.class.getName(), exception.getString());
             if(mInitErrorCode != 0)
             {
-                showErrorMessage(mInitErrorCode,10, true);
+                showErrorMessage(mInitErrorCode, 10, true);
             }
             else
             {
@@ -423,7 +392,6 @@ public class RecognitionFragment extends Fragment implements SampleApplicationCo
         // Show a message if we encountered an error:
         if (statusCode < 0)
         {
-
             boolean closeAppAfterError = (
                     statusCode == VuforiaHelper.UPDATE_ERROR_NO_NETWORK_CONNECTION ||
                             statusCode == VuforiaHelper.UPDATE_ERROR_SERVICE_NOT_AVAILABLE);
@@ -436,21 +404,22 @@ public class RecognitionFragment extends Fragment implements SampleApplicationCo
             {
                 TargetSearchResult result = finder.getResult(0);
                 Metadata metadata = new Gson().fromJson(result.getMetaData(), Metadata.class);
-                stopFinderIfStarted();
-                try {
-                    mVuforiaAppSession.pauseAR();
-                } catch (SampleApplicationException e) {
-                    Log.e(RecognitionFragment.class.getName(), null, e);
-                }
 
-                mMainActivity.onWineRecognized(metadata);
+                mRecognitionActivity.onWineRecognized(metadata);
                 Picasso.with(getActivity())
                         .load(metadata.getImageUrl())
                         .noFade()
                         .into(mImageView, new Callback() {
                             @Override
                             public void onSuccess() {
+                                try {
+                                    mVuforiaAppSession.pauseAR();
+                                } catch (SampleApplicationException e) {
+                                    Log.e(RecognitionFragment.class.getName(), null, e);
+                                }
                                 mImageView.animate().alpha(1).setDuration(500).start();
+                                mCameraHidden = true;
+                                getActivity().invalidateOptionsMenu();
                             }
 
                             @Override

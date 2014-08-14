@@ -10,6 +10,7 @@ package com.qualcomm.vuforia.template;
 import android.content.Context;
 import android.graphics.PixelFormat;
 import android.opengl.GLSurfaceView;
+import android.util.AttributeSet;
 import android.util.Log;
 
 import javax.microedition.khronos.egl.EGL10;
@@ -31,8 +32,11 @@ public class SampleApplicationGLView extends GLSurfaceView
     {
         super(context);
     }
-    
-    
+
+    public SampleApplicationGLView(Context context, AttributeSet attrs) {
+        super(context, attrs);
+    }
+
     // Initialization.
     public void init(boolean translucent, int depth, int stencil)
     {

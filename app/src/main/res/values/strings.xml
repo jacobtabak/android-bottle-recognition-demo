@@ -1,4 +1,5 @@
 <resources>
     <string name="app_name">Bottle Reader</string>
     <string name="button_ok">OK</string>
+    <string name="scan_a_bottle">Scan a bottle of wine with your camera.</string>
 </resources>

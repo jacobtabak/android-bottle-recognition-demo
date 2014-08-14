@@ -224,7 +224,6 @@ public class SampleApplicationSession implements UpdateCallbackInterface
         // and loading the tracker datasets do not overlap:
         synchronized (mShutdownLock)
         {
-            
             boolean unloadTrackersResult;
             boolean deinitTrackersResult;
             
@@ -236,7 +235,7 @@ public class SampleApplicationSession implements UpdateCallbackInterface
             
             // Deinitialize Vuforia SDK:
             Vuforia.deinit();
-            
+
             if (!unloadTrackersResult)
                 throw new SampleApplicationException(
                     SampleApplicationException.UNLOADING_TRACKERS_FAILURE,
@@ -507,7 +506,7 @@ public class SampleApplicationSession implements UpdateCallbackInterface
         DisplayMetrics metrics = new DisplayMetrics();
         mActivity.getWindowManager().getDefaultDisplay().getMetrics(metrics);
         mScreenWidth = metrics.widthPixels;
-        mScreenHeight = metrics.heightPixels;
+        mScreenHeight = mScreenWidth * 3 / 4;
     }
     
     
@@ -548,7 +547,6 @@ public class SampleApplicationSession implements UpdateCallbackInterface
         if (mCameraRunning) {
             mSessionControl.doStopTrackers();
             CameraDevice.getInstance().stop();
-            CameraDevice.getInstance().deinit();
             mCameraRunning = false;
         }
     }
@@ -582,26 +580,21 @@ public class SampleApplicationSession implements UpdateCallbackInterface
         int xSize = 0, ySize = 0;
         if (mIsPortrait)
         {
-            xSize = (int) (vm.getHeight() * (mScreenHeight / (float) vm
-                .getWidth()));
+            xSize = (int) (vm.getHeight() * (mScreenHeight / (float) vm.getWidth()));
             ySize = mScreenHeight;
             
             if (xSize < mScreenWidth)
             {
                 xSize = mScreenWidth;
-                ySize = (int) (mScreenWidth * (vm.getWidth() / (float) vm
-                    .getHeight()));
+                ySize = (int) (mScreenWidth * (vm.getWidth() / (float) vm.getHeight()));
             }
-        } else
-        {
+        } else {
             xSize = mScreenWidth;
-            ySize = (int) (vm.getHeight() * (mScreenWidth / (float) vm
-                .getWidth()));
+            ySize = (int) (vm.getHeight() * (mScreenWidth / (float) vm.getWidth()));
             
             if (ySize < mScreenHeight)
             {
-                xSize = (int) (mScreenHeight * (vm.getWidth() / (float) vm
-                    .getHeight()));
+                xSize = (int) (mScreenHeight * (vm.getWidth() / (float) vm.getHeight()));
                 ySize = mScreenHeight;
             }
         }
