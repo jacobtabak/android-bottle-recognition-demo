@@ -52,4 +52,11 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent" />
     </LinearLayout>
+    <!--
+         this SurfaceView is to prevent flicker when GlSurfaceView is added later
+         http://stackoverflow.com/questions/8772862/surfaceview-flashes-black-on-load/12636285#12636285
+    -->
+    <SurfaceView
+        android:layout_width="0dp"
+        android:layout_height="0dp"/>
 </FrameLayout>

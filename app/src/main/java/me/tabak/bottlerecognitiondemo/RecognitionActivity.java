@@ -9,6 +9,7 @@ import android.webkit.WebView;
 import android.webkit.WebViewClient;
 import android.widget.TextView;
 
+import com.crashlytics.android.Crashlytics;
 import me.tabak.bottlerecognitiondemo.model.Metadata;
 import me.tabak.bottlerecognitiondemo.view.WebViewScroll;
 
@@ -22,6 +23,7 @@ public class RecognitionActivity extends Activity implements WebViewScroll.OnScr
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        Crashlytics.start(this);
         setContentView(R.layout.activity_recognition);
         mWebView = (WebViewScroll) findViewById(R.id.webview);
         mWebViewContainer = findViewById(R.id.webview_container);

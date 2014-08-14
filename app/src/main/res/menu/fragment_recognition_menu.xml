@@ -2,6 +2,11 @@
 
 <menu xmlns:android="http://schemas.android.com/apk/res/android">
     <item
+        android:id="@+id/menu_light"
+        android:title="Toggle Flash"
+        android:icon="@drawable/ic_action_flash"
+        android:showAsAction="always"/>
+    <item
         android:id="@+id/menu_camera"
         android:title="Start Camera"
         android:icon="@drawable/ic_action_camera"

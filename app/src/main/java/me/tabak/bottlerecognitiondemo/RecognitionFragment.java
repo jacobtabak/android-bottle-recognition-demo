@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.app.Fragment;
 import android.content.DialogInterface;
 import android.content.pm.ActivityInfo;
+import android.content.pm.PackageManager;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.opengl.GLSurfaceView;
@@ -17,6 +18,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.Toast;
 
 import com.google.gson.Gson;
 import com.qualcomm.vuforia.CameraDevice;
@@ -68,8 +70,10 @@ public class RecognitionFragment extends Fragment implements SampleApplicationCo
     private ViewGroup mContainer;
     private RecognitionActivity mRecognitionActivity;
     private MenuItem mCameraMenuItem;
+    private MenuItem mTorchMenuItem;
     private ImageView mImageView;
     private boolean mCameraHidden;
+    private boolean mTorchEnabled;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -122,11 +126,26 @@ public class RecognitionFragment extends Fragment implements SampleApplicationCo
                 return true;
             }
         });
+        mTorchMenuItem = menu.findItem(R.id.menu_light);
+        mTorchMenuItem.setOnMenuItemClickListener(new MenuItem.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item) {
+                boolean result = CameraDevice.getInstance().setFlashTorchMode(!mTorchEnabled);
+                if (result) {
+                    mTorchEnabled = !mTorchEnabled;
+                } else {
+                    Toast.makeText(getActivity(), "Light Not Available", Toast.LENGTH_SHORT).show();
+                }
+                return true;
+            }
+        });
     }
 
     @Override
     public void onPrepareOptionsMenu(Menu menu) {
         mCameraMenuItem.setVisible(mCameraHidden);
+        boolean hasFlash = getActivity().getPackageManager().hasSystemFeature(PackageManager.FEATURE_CAMERA_FLASH);
+        mTorchMenuItem.setVisible(!mCameraHidden && hasFlash);
         super.onPrepareOptionsMenu(menu);
     }
 
@@ -166,11 +185,14 @@ public class RecognitionFragment extends Fragment implements SampleApplicationCo
     @Override
     public void onPause() {
         super.onPause();
+
         try {
             mVuforiaAppSession.pauseAR();
         } catch (SampleApplicationException e) {
             Log.e(RecognitionFragment.class.getName(), null, e);
         }
+
+        mTorchEnabled = false;
         CameraDevice.getInstance().deinit();
 
         // Pauses the OpenGLView
@@ -210,6 +232,12 @@ public class RecognitionFragment extends Fragment implements SampleApplicationCo
         // Initialize the GLView with proper flags
         mGlView = new SampleApplicationGLView(getActivity());
         mGlView.init(translucent, depthSize, stencilSize);
+        mGlView.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                CameraDevice.getInstance().setFocusMode(CameraDevice.FOCUS_MODE.FOCUS_MODE_TRIGGERAUTO);
+            }
+        });
 
         // Setups the Renderer of the GLView
         mRenderer = new RecognitionRenderer(mVuforiaAppSession, this);
@@ -413,6 +441,8 @@ public class RecognitionFragment extends Fragment implements SampleApplicationCo
                             @Override
                             public void onSuccess() {
                                 try {
+                                    mTorchEnabled = false;
+                                    CameraDevice.getInstance().setFlashTorchMode(false);
                                     mVuforiaAppSession.pauseAR();
                                 } catch (SampleApplicationException e) {
                                     Log.e(RecognitionFragment.class.getName(), null, e);
